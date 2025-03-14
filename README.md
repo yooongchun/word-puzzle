@@ -1,6 +1,7 @@
 # 说明
 
 单词解谜类游戏，快速搜索
+
 基本操作是：游戏中给定 N 个字符可以猜测 M 次，每次用户输入之后游戏给出某个位置的某个字符是正确、错位（字符存在于单词中但是位置不对）、不存在（字符不存在于单词中）这三种状态，比如在一个 N=4，M=5的回合中：
 
 <img width="122" alt="image" src="https://github.com/user-attachments/assets/e57039f0-221a-4336-a124-e41fc3f5477c" />
@@ -16,5 +17,7 @@
 每次猜测之后程序会进行搜索给出备选答案。
 
 <img width="434" alt="image" src="https://github.com/user-attachments/assets/2efd12ab-2e03-4146-bb9d-f0aa31aaebb7" />
+
+候选词加载个数可以修改参数 `limit=100`
 
 # Have fun!!
