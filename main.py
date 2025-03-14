@@ -166,6 +166,7 @@ def start_game(words: set, n: int, m: int, limit: int = 100):
             continue
         if len(guess) != n * 2:
             print("请输入长度为目标单词两倍的字符串！")
+            current_guess -= 1
             continue
         # 获取候选词
         match_rule(guess, must_include, must_exclude, exact, exact_not)
