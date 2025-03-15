@@ -1,3 +1,4 @@
+import os
 import enum
 import re
 import json
@@ -17,7 +18,7 @@ def load_words(num_chars: int, path: str = "words.json"):
 
 
 def delete_word(words: set, word: str, path: str = "words.json"):
-    words.remove(word)
+    words.discard(word)
     with open(path, "r+") as f:
         data = json.load(f)
         data[len(word)] = sorted(words)
@@ -104,6 +105,8 @@ class State(enum.Enum):
 
 
 def print_table(main_table, candi_table):
+    # 清空屏幕
+    os.system('cls' if os.name == 'nt' else 'clear')
     candi_str = tabulate.tabulate(candi_table, tablefmt="fancy_grid").split("\n")
     main_str = tabulate.tabulate(main_table, tablefmt="fancy_grid").split("\n")
     # 并排打印表格
@@ -124,7 +127,7 @@ def match_rule(
             exact_not[j].add(raw_guess[i])
             must_include.add(raw_guess[i])
         else:
-            if raw_guess[j] in must_include:
+            if raw_guess[i] in must_include:
                 continue
             must_exclude.add(raw_guess[i])
 
@@ -132,8 +135,8 @@ def match_rule(
 def get_candi_table(candidates: list, min_rows: int):
     # 转换为 n 列的表格
     n_candi = len(candidates)
-    n_tail = int(n_candi % m > 0)
-    n_cols = n_candi // m + n_tail
+    n_tail = int(n_candi % min_rows > 0)
+    n_cols = n_candi // min_rows + n_tail
     candi_table = [candidates[i : i + n_cols] for i in range(0, n_candi, n_cols)]
     candi_table = [
         [State.get_state(w_char, "3") for w_char in row] for row in candi_table
@@ -144,7 +147,7 @@ def get_candi_table(candidates: list, min_rows: int):
 
 
 def start_game(words: set, n: int, m: int, limit: int = 100):
-    main_table = [[" "] * n for _ in range(m)]
+    main_table = [["*"] * n for _ in range(m)]
     must_include = set()
     must_exclude = set()
     exact = {}
@@ -163,9 +166,26 @@ def start_game(words: set, n: int, m: int, limit: int = 100):
         if re.match(rule, guess):
             delete_word(words, guess[1:].strip())
             current_guess -= 1
+            candidates = get_candidates(
+                words=words,
+                must_include=must_include,
+                must_exclude=must_exclude,
+                exact=exact,
+                exact_not=exact_not,
+                limit=limit,
+            )
+            candi_table = get_candi_table(candidates, min_rows=m)
+            print_table(main_table, candi_table)
             continue
+        if re.match(fr"^3\s+[a-zA-Z]{{{n}}}$", guess):
+            guess = guess[1:].strip()
+            guess = "3".join(guess)
+        if re.match(r"^again$", guess):
+            main()
+            break
         if len(guess) != n * 2:
-            print("请输入长度为目标单词两倍的字符串！")
+            print("请输入长度为目标单词两倍的字符串！", end="")
+            print('\033[F\033[K', end='')
             current_guess -= 1
             continue
         # 获取候选词
@@ -176,10 +196,10 @@ def start_game(words: set, n: int, m: int, limit: int = 100):
             must_exclude=must_exclude,
             exact=exact,
             exact_not=exact_not,
-            limit=100,
+            limit=limit,
         )
         render_guess = [
-            State.get_state(guess[i], guess[i + 1]) for i in range(0, len(guess), 2)
+            State.get_state(guess[i].upper(), guess[i + 1]) for i in range(0, len(guess), 2)
         ]
         main_table[current_guess - 1] = render_guess
         candi_table = get_candi_table(candidates, min_rows=m)
@@ -187,10 +207,15 @@ def start_game(words: set, n: int, m: int, limit: int = 100):
         if all(int(v) == State.CORRECT.value for v in guess[1::2]):
             print("YOU WIN!!")
             break
+    print("GAME OVER")
 
 
-if __name__ == "__main__":
+def main():
     # 初始化
     n, m = init_table()
     words = load_words(n)
-    start_game(words=words, n=n, m=m, limit=100)
+    start_game(words=words, n=n, m=m, limit=100-n*10)
+
+
+if __name__ == "__main__":
+    main()
